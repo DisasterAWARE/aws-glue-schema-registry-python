@@ -1,0 +1,2 @@
+class SchemaRegistryException(Exception):
+    pass

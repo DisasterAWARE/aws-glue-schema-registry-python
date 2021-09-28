@@ -13,7 +13,11 @@ setuptools.setup(
     long_description_content_type='text/markdown',
     package_dir={'': 'src'},
     packages=setuptools.find_packages(where='src'),
-    python_requires='>3.6',
+    python_requires='>=3.7',
+    install_requires=[
+        'boto3>=1.18.48',
+        'typing-extensions>=3.10.0.2;python_version<"3.8"'
+    ],
     extras_require={
         'dev': [
             'pytest>=6',
