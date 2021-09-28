@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Functions to encode and decode values with schema information.
 
 In order to benefit from using a schema registry with Kafka, key and
