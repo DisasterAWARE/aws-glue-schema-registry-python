@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import sys
-from typing import Optional
+from typing import Any, Optional
 from uuid import UUID
 
 if sys.version_info[1] < 8:  # for py37
-    from typing_extensions import Literal
+    from typing_extensions import Literal, Protocol
 else:
-    from typing import Literal
+    from typing import Literal, Protocol
 
 DataFormat = Literal['AVRO', 'JSON']
 
@@ -33,14 +33,14 @@ SchemaStatus = Literal['AVAILABLE', 'PENDING', 'DELETING']
 SchemaVersionStatus = Literal['AVAILABLE', 'PENDING', 'FAILURE', 'DELETING']
 
 
-@dataclass
-class Schema:
-    name: str
-    registry_name: str
+class Schema(Protocol):
     data_format: DataFormat
-    description: str
-    compatibility: CompatibilityMode
-    status: SchemaStatus
+    name: str
+    string: str
+
+    def read(self, bytes_: bytes) -> Any: ...
+
+    def write(self, data) -> bytes: ...
 
 
 @dataclass

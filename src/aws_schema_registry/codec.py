@@ -112,7 +112,7 @@ def decode(bytes_: bytes) -> tuple[bytes, UUID]:
     version = b.read(1)
     if version != VERSION_BYTE:
         raise UnknownEncodingException(
-            f'leading byte {version} not recognized'
+            r"leading byte {version!r} not recognized"
         )
     compression = b.read(1)
     schema_version = UUID(bytes=b.read(SCHEMA_VERSION_ID_SIZE))
@@ -120,5 +120,7 @@ def decode(bytes_: bytes) -> tuple[bytes, UUID]:
     if compression == COMPRESSION_ENABLED_BYTE:
         data = zlib.decompress(data)
     elif compression != COMPRESSION_DISABLED_BYTE:
-        raise CodecException(f'compression byte {compression} not recognized')
+        raise CodecException(
+            f'compression byte {compression!r} not recognized'
+        )
     return data, schema_version

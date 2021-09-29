@@ -16,12 +16,16 @@ setuptools.setup(
     python_requires='>=3.7',
     install_requires=[
         'boto3>=1.18.48',
+        'fastavro>=1.4.5',
         'typing-extensions>=3.10.0.2;python_version<"3.8"'
     ],
     extras_require={
         'dev': [
             'pytest>=6',
             'flake8>=3'
+        ],
+        'kafka-python': [
+            'kafka-python>=2'
         ]
     }
 )

@@ -1,0 +1,16 @@
+{
+  "namespace": "aws_schema_registry.integrationtests",
+  "type": "record",
+  "name": "User",
+  "fields": [
+      {"name": "name", "type": "string" },
+      {"name": "favorite_number",  "type": ["int", "null"] },
+      {"name": "favorite_colors", "type": {
+          "type": "array", "items": {
+              "namespace": "com.amazonaws.services.schemaregistry.serializers.avro",
+              "name": "color",
+              "type": "string"
+          }
+      }, "default": []}
+  ]
+}

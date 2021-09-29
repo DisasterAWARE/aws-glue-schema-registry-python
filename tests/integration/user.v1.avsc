@@ -1,5 +1,5 @@
 {
-  "namespace": "com.amazonaws.services.schemaregistry.serializers.avro",
+  "namespace": "aws_schema_registry.integrationtests",
   "type": "record",
   "name": "User",
   "fields": [

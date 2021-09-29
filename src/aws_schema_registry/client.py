@@ -3,7 +3,7 @@ import time
 from typing import Mapping
 from uuid import UUID
 
-from aws_schema_registry.model import (
+from aws_schema_registry.schema import (
     CompatibilityMode, DataFormat, SchemaVersion
 )
 from aws_schema_registry.exception import SchemaRegistryException
@@ -61,7 +61,7 @@ class SchemaRegistryClient:
         """
         try:
             res = self.glue_client.get_schema_version(
-                SchemaVersionId=version_id
+                SchemaVersionId=str(version_id)
             )
         except Exception as e:
             raise SchemaRegistryException(
@@ -76,7 +76,7 @@ class SchemaRegistryClient:
             )
         return SchemaVersion(
             schema_name=schema_name_from_arn(res['SchemaArn']),
-            version_id=res['SchemaVersionId'],
+            version_id=UUID(res['SchemaVersionId']),
             definition=res['SchemaDefinition'],
             data_format=res['DataFormat'],
             status=res['Status'],
@@ -100,7 +100,7 @@ class SchemaRegistryClient:
         try:
             LOG.debug(
                 'Getting schema version id for: name = %s, definition = %s',
-                definition, schema_name
+                schema_name, definition
             )
             res = self.glue_client.get_schema_by_definition(
                 SchemaId={
@@ -118,7 +118,7 @@ class SchemaRegistryClient:
                 )
             return SchemaVersion(
                 schema_name=schema_name_from_arn(res['SchemaArn']),
-                version_id=res['SchemaVersionId'],
+                version_id=UUID(res['SchemaVersionId']),
                 definition=definition,
                 data_format=res['DataFormat'],
                 status=res['Status']
@@ -136,7 +136,7 @@ class SchemaRegistryClient:
         data_format: DataFormat,
         compatibility_mode: CompatibilityMode = DEFAULT_COMPATIBILITY_MODE,
         metadata: Mapping[str, str] = None
-    ) -> UUID:
+    ) -> SchemaVersion:
         """Get Schema Version ID by following below steps:
 
         1) If schema version id exists in registry then get it from registry
@@ -160,14 +160,11 @@ class SchemaRegistryClient:
                 if registering a new version. Has no effect if a
                 schema version matching the specified definition already
                 exists.
-
-        Returns:
-            the id of the schema version
         """
         try:
-            version_id = self.get_schema_by_definition(
+            version = self.get_schema_by_definition(
                 definition, schema_name
-            ).version_id
+            )
         except SchemaRegistryException as e:
             cause_msg = str(e.__cause__)
             if SCHEMA_VERSION_NOT_FOUND_MSG in cause_msg:
@@ -186,7 +183,8 @@ class SchemaRegistryClient:
                     'Exception occurred while fetching or registering schema'
                     f' definition = {definition}, schema name = {schema_name}'
                 ) from e
-        return version_id
+            version = self.get_schema_version(version_id)
+        return version
 
     def register_schema_version(
         self,
@@ -214,20 +212,17 @@ class SchemaRegistryClient:
                 },
                 SchemaDefinition=definition
             )
+            version_id = UUID(res['SchemaVersionId'])
             LOG.info('Registered the schema version with schema version '
                      'id = %s and with version number = %s and status %s',
-                     res['SchemaVersionId'], res['VersionNumber'],
-                     res['Status'])
+                     version_id, res['VersionNumber'], res['Status'])
             if res['Status'] != 'AVAILABLE':
-                self._wait_for_schema_evolution_check_to_complete(
-                    res['SchemaVersionId']
-                )
+                self._wait_for_schema_evolution_check_to_complete(version_id)
         except Exception as e:
             raise SchemaRegistryException(
                 'Register schema :: Call failed when registering the schema'
                 f' with the schema registry for schema name = {schema_name}',
             ) from e
-        version_id = res['SchemaVersionId']
         if metadata:
             self.put_schema_version_metadata(version_id, metadata)
         return version_id
@@ -239,7 +234,7 @@ class SchemaRegistryClient:
         time.sleep(self.wait_interval_seconds)
         for _ in range(self.max_wait_attempts):
             res = self.glue_client.get_schema_version(
-                SchemaVersionId=schema_version_id
+                SchemaVersionId=str(schema_version_id)
             )
             status = res['Status']
             if status == 'AVAILABLE':
@@ -264,7 +259,7 @@ class SchemaRegistryClient:
         for k, v in metadata.items():
             try:
                 self.glue_client.put_schema_version_metadata(
-                    SchemaVersionId=version_id,
+                    SchemaVersionId=str(version_id),
                     MetadataKeyValue={
                         'MetadataKey': k,
                         'MetadataValue': v
@@ -300,7 +295,7 @@ class SchemaRegistryClient:
                 Tags={},
                 SchemaDefinition=definition
             )
-            version_id = res['SchemaVersionId']
+            version_id = UUID(res['SchemaVersionId'])
             if metadata:
                 self.put_schema_version_metadata(version_id, metadata)
         except Exception as e:

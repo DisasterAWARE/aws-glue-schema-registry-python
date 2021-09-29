@@ -1,11 +1,17 @@
 from .client import SchemaRegistryClient
 from .exception import SchemaRegistryException
-from .model import CompatibilityMode, DataFormat, SchemaVersion
+from .schema import CompatibilityMode, DataFormat, SchemaVersion
+from .serde import (
+    DataAndSchema, SchemaRegistryDeserializer, SchemaRegistrySerializer
+)
 
 __all__ = [
-    CompatibilityMode,
-    DataFormat,
-    SchemaRegistryClient,
-    SchemaRegistryException,
-    SchemaVersion
+    'CompatibilityMode',
+    'DataAndSchema',
+    'DataFormat',
+    'SchemaRegistryClient',
+    'SchemaRegistryDeserializer',
+    'SchemaRegistryException',
+    'SchemaRegistrySerializer',
+    'SchemaVersion'
 ]
