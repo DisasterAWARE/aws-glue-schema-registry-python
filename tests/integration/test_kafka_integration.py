@@ -13,6 +13,7 @@ from aws_schema_registry.avro import AvroSchema
 from aws_schema_registry.adapter.kafka import (
     SchemaRegistryDeserializer, SchemaRegistrySerializer
 )
+from aws_schema_registry.naming import record_name_strategy
 
 BOOTSTRAP_STRING = '127.0.0.1:9092'
 
@@ -104,7 +105,9 @@ def test_produce_consume_with_ser_de_schema_registry(
         glue_client,
         registry_name=registry
     )
-    serializer = SchemaRegistrySerializer(client)
+    serializer = SchemaRegistrySerializer(
+        client, schema_naming_strategy=record_name_strategy
+    )
     deserializer = SchemaRegistryDeserializer(client)
 
     producer = KafkaProducer(

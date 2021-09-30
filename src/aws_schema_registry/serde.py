@@ -14,6 +14,9 @@ from aws_schema_registry.avro import AvroSchema
 from aws_schema_registry.client import SchemaRegistryClient
 from aws_schema_registry.codec import decode, encode, UnknownEncodingException
 from aws_schema_registry.exception import SchemaRegistryException
+from aws_schema_registry.naming import (
+    SchemaNamingStrategy, topic_name_strategy
+)
 from aws_schema_registry.schema import CompatibilityMode, Schema, SchemaVersion
 
 LOG = logging.getLogger(__name__)
@@ -44,11 +47,15 @@ class SchemaRegistrySerializer:
         client: instance of SchemaRegistryClient
         is_key (optional): whether the serializer is serializing keys as
             opposed to values. Defaults to false. Setting this to the
-            appropriate value is critical to avoid mixing key and value
-            schemas if both are integrated with the schema registry.
+            appropriate value is important to avoid mixing key and value
+            schemas if using the default schema name strategy.
         compatibility_mode (optional): the compatibility mode t use if
             creating a new schema in the registry. Defaults to the
             registry's default compatibility setting if not specified.
+        schema_naming_strategy (optional): how to choose the schema name
+            when creating new schemas. Defaults to the topic name
+            strategy. See the `naming` module for more information and
+            alternate strategies.
     """
 
     _cache: Dict[Schema, SchemaVersion]
@@ -57,11 +64,13 @@ class SchemaRegistrySerializer:
         self,
         client: SchemaRegistryClient,
         is_key: bool = False,
-        compatibility_mode: CompatibilityMode = 'BACKWARD'
+        compatibility_mode: CompatibilityMode = 'BACKWARD',
+        schema_naming_strategy: SchemaNamingStrategy = topic_name_strategy
     ):
         self.client = client
         self.is_key = is_key
         self.compatibility_mode: CompatibilityMode = compatibility_mode
+        self.schema_naming_strategy = schema_naming_strategy
         self._cache = {}
 
     def serialize(self, topic, data_and_schema: DataAndSchema):
@@ -73,9 +82,11 @@ class SchemaRegistrySerializer:
         data, schema = data_and_schema
         schema_version = self._cache.get(schema)
         if not schema_version:
+            schema_name = self.schema_naming_strategy(
+                topic, self.is_key, schema
+            )
             LOG.info('Schema %s not cached locally, registering...',
-                     schema.name)
-            schema_name = f"{topic}-{'key' if self.is_key else 'value'}"
+                     schema_name)
             schema_version = self.client.get_or_register_schema_version(
                 definition=schema.string,
                 schema_name=schema_name,
