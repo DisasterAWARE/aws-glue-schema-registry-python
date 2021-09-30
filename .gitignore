@@ -1,3 +1,14 @@
-.venv
-__pycache__
+# python
+venv*
+.venv*
+env
+.env
 .tox
+.toxenv
+__pycache__
+*.egg-info
+
+# IDEs
+.vscode
+.idea
+*.iml
