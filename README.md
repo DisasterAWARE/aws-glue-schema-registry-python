@@ -1,5 +1,7 @@
 # AWS Glue Schema Registry for Python
 
+[![main](https://github.com/DisasterAWARE/aws-glue-schema-registry-python/actions/workflows/main.yml/badge.svg)](https://github.com/DisasterAWARE/aws-glue-schema-registry-python/actions/workflows/main.yml)
+
 Use the AWS Glue Schema Registry in Python projects.
 
 This library is a partial port of [aws-glue-schema-registry](https://github.com/awslabs/aws-glue-schema-registry) which implements a subset of its features with full compatibility.
