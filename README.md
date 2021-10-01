@@ -52,7 +52,7 @@ See https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.htm
 Send Kafka messages with `SchemaRegistrySerializer`:
 
 ```python
-from aws_schema_registry import SchemaRegistryClient
+from aws_schema_registry import DataAndSchema, SchemaRegistryClient
 from aws_schema_registry.avro import AvroSchema
 
 # In this example we will use kafka-python as our Kafka client,
