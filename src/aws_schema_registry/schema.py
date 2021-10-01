@@ -1,14 +1,15 @@
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 import sys
-from typing import Any, Optional
+from typing import Any, Optional, Hashable
 from uuid import UUID
 
 if sys.version_info[1] < 8:  # for py37
-    from typing_extensions import Literal, Protocol
+    from typing_extensions import Literal
 else:
-    from typing import Literal, Protocol
+    from typing import Literal
 
 DataFormat = Literal['AVRO', 'JSON']
 
@@ -33,14 +34,26 @@ SchemaStatus = Literal['AVAILABLE', 'PENDING', 'DELETING']
 SchemaVersionStatus = Literal['AVAILABLE', 'PENDING', 'FAILURE', 'DELETING']
 
 
-class Schema(Protocol):
-    data_format: DataFormat
-    name: str
-    string: str
+class Schema(ABC, Hashable):
+    """Abstract base class for a schema implementation."""
 
-    def read(self, bytes_: bytes) -> Any: ...
+    @property
+    @abstractmethod
+    def data_format(self) -> DataFormat:
+        """The data format of this schema."""
 
-    def write(self, data) -> bytes: ...
+    @property
+    @abstractmethod
+    def fqn(self) -> str:
+        """The fully-qualified name of this schema."""
+
+    @abstractmethod
+    def read(self, bytes_: bytes) -> Any:
+        """Read bytes into a record."""
+
+    @abstractmethod
+    def write(self, data) -> bytes:
+        """Write a record into bytes."""
 
 
 @dataclass

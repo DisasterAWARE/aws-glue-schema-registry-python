@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import functools
 import logging
 import sys
 from typing import Any, Dict, NamedTuple
@@ -58,8 +59,6 @@ class SchemaRegistrySerializer:
             alternate strategies.
     """
 
-    _cache: Dict[Schema, SchemaVersion]
-
     def __init__(
         self,
         client: SchemaRegistryClient,
@@ -71,31 +70,28 @@ class SchemaRegistrySerializer:
         self.is_key = is_key
         self.compatibility_mode: CompatibilityMode = compatibility_mode
         self.schema_naming_strategy = schema_naming_strategy
-        self._cache = {}
 
-    def serialize(self, topic, data_and_schema: DataAndSchema):
+    def serialize(self, topic: str, data_and_schema: DataAndSchema):
         if data_and_schema is None:
             return None
         if not isinstance(data_and_schema, DataAndSchema):
             raise TypeError('AvroSerializer can only serialize',
                             f' {DataAndSchema}, got {type(data_and_schema)}')
         data, schema = data_and_schema
-        schema_version = self._cache.get(schema)
-        if not schema_version:
-            schema_name = self.schema_naming_strategy(
-                topic, self.is_key, schema
-            )
-            LOG.info('Schema %s not cached locally, registering...',
-                     schema_name)
-            schema_version = self.client.get_or_register_schema_version(
-                definition=schema.string,
-                schema_name=schema_name,
-                data_format=schema.data_format,
-                compatibility_mode=self.compatibility_mode
-            )
-            self._cache[schema] = schema_version
+        schema_version = self._get_schema_version(topic, schema)
         serialized = schema.write(data)
         return encode(serialized, schema_version.version_id)
+
+    @functools.lru_cache(maxsize=None)
+    def _get_schema_version(self, topic: str, schema: Schema) -> SchemaVersion:
+        schema_name = self.schema_naming_strategy(topic, self.is_key, schema)
+        LOG.info('Fetching schema %s...', schema_name)
+        return self.client.get_or_register_schema_version(
+            definition=str(schema),
+            schema_name=schema_name,
+            data_format=schema.data_format,
+            compatibility_mode=self.compatibility_mode
+        )
 
 
 class SchemaRegistryDeserializer:
@@ -146,10 +142,13 @@ class SchemaRegistryDeserializer:
             schema_version = self.client.get_schema_version(
                 version_id=schema_version_id
             )
-            if schema_version.data_format == 'AVRO':
-                writer_schema = AvroSchema(schema_version.definition)
-            elif schema_version.data_format == 'JSON':
-                raise NotImplementedError('JSON schema not supported')
+            writer_schema = self._create_writer_schema(schema_version)
             self._writer_schemas[schema_version_id] = writer_schema
-            LOG.info('Schema %s fetched', schema_version_id)
+            LOG.info('Schema version %s fetched', schema_version_id)
         return writer_schema.read(data_bytes)
+
+    def _create_writer_schema(self, schema_version: SchemaVersion) -> Schema:
+        if schema_version.data_format == 'AVRO':
+            return AvroSchema(schema_version.definition)
+        elif schema_version.data_format == 'JSON':
+            raise NotImplementedError('JSON schema not supported')

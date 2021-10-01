@@ -61,7 +61,7 @@ def record_name_strategy(topic: str, is_key: bool, schema: Schema) -> str:
     However, this requires that the fully-qualified record names uniquely
     and consistently identify a schema across the entire registry.
     """
-    return schema.name
+    return schema.fqn
 
 
 def topic_record_name_strategy(topic: str, is_key: bool,
@@ -72,4 +72,4 @@ def topic_record_name_strategy(topic: str, is_key: bool,
     Additionally allows different topics to use the same record name for
     incompatible schemas.
     """
-    return f'{topic}-{schema.name}'
+    return f'{topic}-{schema.fqn}'

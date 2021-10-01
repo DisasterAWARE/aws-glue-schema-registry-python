@@ -3,13 +3,13 @@ from aws_schema_registry.avro import AvroSchema
 
 def test_fully_qualified_name():
     s = AvroSchema('{"type": "record", "namespace": "foo", "name": "Bar"}')
-    assert s.name == "foo.Bar"
+    assert s.fqn == "foo.Bar"
 
 
 def test_primitive_name():
     # fastavro does not fulfill this part of the Avro spec
     s = AvroSchema('{"type": "string"}')
-    assert s.name == 'string'
+    assert s.fqn == 'string'
 
 
 def test_readwrite():
