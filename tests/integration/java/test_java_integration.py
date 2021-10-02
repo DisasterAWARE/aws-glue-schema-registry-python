@@ -54,7 +54,10 @@ def test_interop_with_java_library(glue_client, registry, boto_session):
         }
     )
     proc.check_returncode()
-    assert deserializer.deserialize('test', proc.stdout) == data
+    deserialized = deserializer.deserialize('test', proc.stdout)
+    assert deserialized
+    assert deserialized.data == data
+    assert deserialized.schema == SCHEMA
 
 
 def compile_java():

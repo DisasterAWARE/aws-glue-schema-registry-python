@@ -64,3 +64,6 @@ class SchemaVersion:
     data_format: DataFormat
     status: SchemaVersionStatus
     version_number: Optional[int] = None
+
+    def __hash__(self):
+        return hash(self.definition)

@@ -3,7 +3,7 @@ from __future__ import annotations
 import functools
 import logging
 import sys
-from typing import Any, Dict, NamedTuple
+from typing import Any, NamedTuple
 from uuid import UUID
 
 if sys.version_info[1] < 8:  # for py37
@@ -109,8 +109,6 @@ class SchemaRegistryDeserializer:
             registries or handle schema-less data.
     """
 
-    _writer_schemas: Dict[UUID, Schema]
-
     def __init__(
         self,
         client: SchemaRegistryClient,
@@ -120,7 +118,6 @@ class SchemaRegistryDeserializer:
         self.client = client
         self.return_record_name = return_record_name
         self.secondary_deserializer = secondary_deserializer
-        self._writer_schemas = {}
 
     def deserialize(self, topic: str, bytes_: bytes):
         if bytes_ is None:
@@ -135,20 +132,18 @@ class SchemaRegistryDeserializer:
                     'no secondary deserializer provided to handle'
                     ' unrecognized data encoding'
                 ) from e
-        writer_schema = self._writer_schemas.get(schema_version_id)
-        if not writer_schema:
-            LOG.info('Schema version %s not found locally, fetching from'
-                     ' registry...', schema_version_id)
-            schema_version = self.client.get_schema_version(
-                version_id=schema_version_id
-            )
-            writer_schema = self._create_writer_schema(schema_version)
-            self._writer_schemas[schema_version_id] = writer_schema
-            LOG.info('Schema version %s fetched', schema_version_id)
-        return writer_schema.read(data_bytes)
+        writer_schema_version = self._get_schema_version(schema_version_id)
+        writer_schema = self._schema_for_version(writer_schema_version)
+        return DataAndSchema(writer_schema.read(data_bytes), writer_schema)
 
-    def _create_writer_schema(self, schema_version: SchemaVersion) -> Schema:
-        if schema_version.data_format == 'AVRO':
-            return AvroSchema(schema_version.definition)
-        elif schema_version.data_format == 'JSON':
+    @functools.lru_cache(maxsize=None)
+    def _get_schema_version(self, version_id: UUID):
+        LOG.info('Fetching schema version %s...', version_id)
+        return self.client.get_schema_version(version_id)
+
+    @functools.lru_cache(maxsize=None)
+    def _schema_for_version(self, version: SchemaVersion) -> Schema:
+        if version.data_format == 'AVRO':
+            return AvroSchema(version.definition)
+        elif version.data_format == 'JSON':
             raise NotImplementedError('JSON schema not supported')

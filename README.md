@@ -66,7 +66,7 @@ from kafka import KafkaConsumer
 # Create the schema registry client, which is a façade around the boto3 glue client
 client = SchemaRegistryClient(glue_client,
                               registry_name='my-registry')
-                              
+
 # Create the serializer
 serializer = SchemaRegistrySerializer(client)
 
@@ -77,7 +77,7 @@ producer = KafkaProducer(value_serializer=serializer)
 # In this example we're using Avro, so we'll load an .avsc file.
 with open('user.avsc', 'r') as schema_file:
     schema = AvroSchema(schema_file.read())
-    
+
 # Send message data along with schema
 data = {
     'name': 'John Doe',
@@ -101,7 +101,7 @@ from kafka import KafkaConsumer
 # Create the schema registry client, which is a façade around the boto3 glue client
 client = SchemaRegistryClient(glue_client,
                               registry_name='my-registry')
-                              
+
 # Create the deserializer
 deserializer = SchemaRegistryDeserializer(client)
 
@@ -110,7 +110,10 @@ consumer = KafkaConsumer('my-topic', value_deserializer=deserializer)
 
 # Now use the consumer normally
 for message in consumer:
-    # `message.value` will be the deserialized value
+    # The deserializer produces DataAndSchema instances
+    value: DataAndSchema = message.value
+    value.data
+    value.schema
 ```
 
 ## Contributing
