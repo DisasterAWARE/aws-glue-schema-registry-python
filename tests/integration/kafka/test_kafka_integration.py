@@ -94,5 +94,7 @@ def test_produce_consume_with_ser_de_schema_registry(
     assert len(batch) == 1
     messages = batch[list(batch.keys())[0]]
     assert len(messages) == 2
-    assert messages[0].value == data1
-    assert messages[1].value == data2
+    assert messages[0].value.data == data1
+    assert messages[0].value.schema == SCHEMA_V1
+    assert messages[1].value.data == data2
+    assert messages[1].value.schema == SCHEMA_V2
