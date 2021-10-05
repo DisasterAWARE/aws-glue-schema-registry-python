@@ -1,6 +1,8 @@
 from .client import SchemaRegistryClient
 from .exception import SchemaRegistryException
-from .schema import CompatibilityMode, DataFormat, Schema, SchemaVersion
+from .schema import (
+    CompatibilityMode, DataFormat, Schema, SchemaVersion, ValidationError
+)
 from .serde import (
     DataAndSchema, SchemaRegistryDeserializer, SchemaRegistrySerializer
 )
@@ -16,5 +18,6 @@ __all__ = [
     'SchemaRegistryDeserializer',
     'SchemaRegistryException',
     'SchemaRegistrySerializer',
-    'SchemaVersion'
+    'SchemaVersion',
+    'ValidationError'
 ]

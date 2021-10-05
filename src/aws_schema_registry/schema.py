@@ -55,6 +55,18 @@ class Schema(ABC, Hashable):
     def write(self, data) -> bytes:
         """Write a record into bytes."""
 
+    def validate(self, data) -> None:
+        """Raise a ValidationException if the data is invalid."""
+
+
+class ValidationError(Exception):
+    """Raised when a schema's `validate` is called on invalid data.
+
+    The error need not contain *every* validation error, just the first that
+    classifies the data as invalid.
+    """
+    pass
+
 
 @dataclass
 class SchemaVersion:

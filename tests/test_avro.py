@@ -1,3 +1,6 @@
+import pytest
+
+from aws_schema_registry import ValidationError
 from aws_schema_registry.avro import AvroSchema
 
 
@@ -27,3 +30,24 @@ def test_readwrite():
         'age': 900
     }
     assert s.read(s.write(d)) == d
+
+
+def test_validation():
+    s = AvroSchema('''
+{
+  "type": "record",
+  "name": "JediMaster",
+  "fields": [
+    {"name": "name", "type": "string" },
+    {"name": "age", "type": "int" }
+  ]
+}''')
+    with pytest.raises(ValidationError) as e:
+        s.validate({'name': 'Obi-Wan'})
+    assert 'name' not in str(e)
+    assert 'age' in str(e)
+    with pytest.raises(ValidationError) as e:
+        s.validate({'name': 1, 'age': 2})
+    assert 'name' in str(e)
+    assert 'age' not in str(e)
+    s.validate({'name': 'Jar Jar', 'age': 42, 'sith': True})

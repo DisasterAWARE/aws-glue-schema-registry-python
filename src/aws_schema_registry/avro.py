@@ -5,7 +5,7 @@ import json
 
 import fastavro
 
-from aws_schema_registry.schema import DataFormat, Schema
+from aws_schema_registry.schema import DataFormat, Schema, ValidationError
 
 
 class AvroSchema(Schema):
@@ -63,3 +63,12 @@ class AvroSchema(Schema):
         value = b.getvalue()
         b.close()
         return value
+
+    def validate(self, data):
+        try:
+            fastavro.validate(data, self._parsed)
+        except Exception as e:
+            # the message will contain space characters, json.loads + str is a
+            # (relatively inefficient) way to remove them
+            detail: list[str] = json.loads(str(e))
+            raise ValidationError(str(detail)) from e
