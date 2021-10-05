@@ -7,7 +7,7 @@ from .serde import (
     DataAndSchema, SchemaRegistryDeserializer, SchemaRegistrySerializer
 )
 
-__version__ = '1.0.0rc3'
+__version__ = '1.0.0rc4'
 
 __all__ = [
     'CompatibilityMode',
