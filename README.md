@@ -1,6 +1,5 @@
 # AWS Glue Schema Registry for Python
 
-
 [![PyPI](https://img.shields.io/pypi/v/aws-glue-schema-registry.svg)](https://pypi.org/project/aws-glue-schema-registry)
 [![PyPI](https://img.shields.io/pypi/pyversions/aws-glue-schema-registry)](https://pypi.org/project/aws-glue-schema-registry)
 [![main](https://github.com/DisasterAWARE/aws-glue-schema-registry-python/actions/workflows/main.yml/badge.svg)](https://github.com/DisasterAWARE/aws-glue-schema-registry-python/actions/workflows/main.yml)
