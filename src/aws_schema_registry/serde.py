@@ -26,7 +26,7 @@ LOG = logging.getLogger(__name__)
 class DataAndSchema(NamedTuple):
     """Data and its schema.
 
-    Should be used to wrap the data and schema together before calling the
+    Can be used to wrap the data and schema together before calling the
     producer's producing methods.
     """
     data: Any
@@ -74,9 +74,9 @@ class SchemaRegistrySerializer:
     def serialize(self, topic: str, data_and_schema: DataAndSchema):
         if data_and_schema is None:
             return None
-        if not isinstance(data_and_schema, DataAndSchema):
+        if not isinstance(data_and_schema, tuple):
             raise TypeError('AvroSerializer can only serialize',
-                            f' {DataAndSchema}, got {type(data_and_schema)}')
+                            f' {tuple}, got {type(data_and_schema)}')
         data, schema = data_and_schema
         schema_version = self._get_schema_version(topic, schema)
         serialized = schema.write(data)

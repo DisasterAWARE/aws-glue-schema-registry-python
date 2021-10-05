@@ -86,8 +86,8 @@ data = {
     'name': 'John Doe',
     'favorite_number': 6
 }
-producer.send('my-topic', value=DataAndSchema(data, schema))
-# the value MUST be an instance of DataAndSchema when we're using the SchemaRegistrySerializer
+producer.send('my-topic', value=(data, schema))
+# the value MUST be a tuple when we're using the SchemaRegistrySerializer
 ```
 
 Read Kafka messages with `SchemaRegistryDeserializer`:
@@ -115,8 +115,11 @@ consumer = KafkaConsumer('my-topic', value_deserializer=deserializer)
 for message in consumer:
     # The deserializer produces DataAndSchema instances
     value: DataAndSchema = message.value
-    value.data
-    value.schema
+    # which are NamedTuples with a `data` and `schema` property
+    value.data == value[0]
+    value.schema == value[1]
+    # and can be deconstructed
+    data, schema = value
 ```
 
 ## Contributing
