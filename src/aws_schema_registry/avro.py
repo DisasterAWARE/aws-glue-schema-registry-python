@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from io import BytesIO
 import json
+from typing import Union
 
 import fastavro
 
@@ -12,15 +13,19 @@ class AvroSchema(Schema):
     """Implementation of the `Schema` protocol for Avro schemas.
 
     Arguments:
-        string: the stringified schema definition
+        definition: the schema, either as a parsed dict or a string
         return_record_name: if true, when reading a union of records,
             the result will be a tuple where the first value is the
             name of the record and the second value is the record
             itself
     """
 
-    def __init__(self, string: str, return_record_name: bool = False):
-        self._dict = json.loads(string)
+    def __init__(self, definition: Union[str, dict],
+                 return_record_name: bool = False):
+        if isinstance(definition, str):
+            self._dict = json.loads(definition)
+        else:
+            self._dict = definition
         self._parsed = fastavro.parse_schema(self._dict)
         self.return_record_name = return_record_name
 
