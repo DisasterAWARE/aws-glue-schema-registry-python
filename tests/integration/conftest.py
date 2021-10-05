@@ -1,9 +1,10 @@
-from datetime import datetime
 import logging
 import os
 
 import boto3
 import pytest
+
+from aws_schema_registry.client import TemporaryRegistry
 
 LOG = logging.getLogger(__name__)
 
@@ -13,8 +14,6 @@ AWS_SESSION_TOKEN = os.getenv('AWS_SESSION_TOKEN')
 AWS_REGION = os.getenv('AWS_REGION')
 AWS_PROFILE = os.getenv('AWS_PROFILE')
 
-REGISTRY_PREFIX = 'schema-registry-tests'
-DATE = datetime.utcnow().strftime('%y-%m-%d-%H-%M-%s')
 CLEANUP_REGISTRY = os.getenv('CLEANUP_REGISTRY') is None
 
 
@@ -37,15 +36,12 @@ def glue_client(boto_session):
 @pytest.fixture(scope='session')
 def registry(glue_client):
     """The AWS Glue registry to use for testing."""
-    name = f'{REGISTRY_PREFIX}-{DATE}'
-    LOG.info('creating registry %s...' % name)
-    glue_client.create_registry(
-        RegistryName=name,
-        Description='Registry used for the schema registry python integration'
+    with TemporaryRegistry(
+        glue_client,
+        name='schema-registry-tests',
+        description='Registry used for the schema registry python integration'
         ' tests. This registry does not hold any valuable data and is safe to'
-        ' delete as long as it is not currently in use by a test'
-    )
-    yield name
-    if CLEANUP_REGISTRY:
-        LOG.info('deleting registry %s...' % name)
-        glue_client.delete_registry(RegistryId={'RegistryName': name})
+        ' delete as long as it is not currently in use by a test',
+        autoremove=CLEANUP_REGISTRY
+    ) as registry:
+        yield registry.name

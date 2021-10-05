@@ -1,6 +1,9 @@
+from datetime import datetime
 import logging
 import time
-from typing import Mapping
+import random
+import string
+from typing import ContextManager, Mapping
 from uuid import UUID
 
 from aws_schema_registry.schema import (
@@ -310,3 +313,57 @@ class SchemaRegistryClient:
                     f'Create schema {name} failed'
                 ) from e
         return version_id
+
+
+class TemporaryRegistry(ContextManager):
+    """A real schema registry for use in tests and experiments.
+
+    This class implements the ContextManager protocol, creating the registry
+    on enter and destroying it on exit.
+
+    Usage:
+
+```python
+    with TemporaryRegistry(glue_client, 'MyRegistry') as r:
+        # registry is created on enter
+        print(r.name)  # the "real" (suffixed) registry name
+        # registry is destroyed on exit
+```
+
+    Arguments:
+        glue_client: glue client created by `botocore`/`boto3`.
+        name: human-readable name for the created registry. The name will be
+            suffixed by a random identifier to reduce the freqency of
+            collisions.
+        description: description for the created registry.
+        autoremove: whether to destroy the created registry. Defaults to True.
+    """
+
+    DEFAULT_DESCRIPTION = 'Temporary registry created with the aws-glue-schema-registry Python library.'  # NOQA
+
+    def __init__(self, glue_client,
+                 name: str = 'temporary-registry',
+                 description: str = DEFAULT_DESCRIPTION,
+                 autoremove: bool = True):
+        self.glue_client = glue_client
+        date = datetime.utcnow().strftime('%y-%m-%d-%H-%M')
+        r = ''.join(random.choices(string.digits + string.ascii_letters,
+                                   k=16))
+        self.name = f'{name}-{date}-{r}'
+        self.description = description
+        self.autoremove = autoremove
+
+    def __enter__(self):
+        LOG.info('creating registry %s...' % self.name)
+        self.glue_client.create_registry(
+            RegistryName=self.name,
+            Description=self.description
+        )
+        return self
+
+    def __exit__(self, *args):
+        if self.autoremove:
+            LOG.info('deleting registry %s...' % self.name)
+            self.glue_client.delete_registry(
+                RegistryId={'RegistryName': self.name}
+            )
