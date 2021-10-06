@@ -3,9 +3,7 @@ from .exception import SchemaRegistryException
 from .schema import (
     CompatibilityMode, DataFormat, Schema, SchemaVersion, ValidationError
 )
-from .serde import (
-    DataAndSchema, SchemaRegistryDeserializer, SchemaRegistrySerializer
-)
+from .serde import DataAndSchema, KafkaDeserializer, KafkaSerializer
 
 __version__ = '1.0.0rc5'
 
@@ -13,11 +11,11 @@ __all__ = [
     'CompatibilityMode',
     'DataAndSchema',
     'DataFormat',
+    'KafkaDeserializer',
+    'KafkaSerializer',
     'Schema',
     'SchemaRegistryClient',
-    'SchemaRegistryDeserializer',
     'SchemaRegistryException',
-    'SchemaRegistrySerializer',
     'SchemaVersion',
     'ValidationError'
 ]

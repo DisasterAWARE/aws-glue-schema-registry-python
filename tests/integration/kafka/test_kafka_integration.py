@@ -8,7 +8,7 @@ import pytest
 from aws_schema_registry import DataAndSchema, SchemaRegistryClient
 from aws_schema_registry.avro import AvroSchema
 from aws_schema_registry.adapter.kafka import (
-    SchemaRegistryDeserializer, SchemaRegistrySerializer
+    KafkaDeserializer, KafkaSerializer
 )
 from aws_schema_registry.naming import record_name_strategy
 
@@ -62,10 +62,10 @@ def test_produce_consume_with_ser_de_schema_registry(
     client = SchemaRegistryClient(
         glue_client, registry_name=registry
     )
-    serializer = SchemaRegistrySerializer(
+    serializer = KafkaSerializer(
         client, schema_naming_strategy=record_name_strategy
     )
-    deserializer = SchemaRegistryDeserializer(client)
+    deserializer = KafkaDeserializer(client)
 
     producer = KafkaProducer(
         value_serializer=serializer,

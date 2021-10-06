@@ -67,7 +67,7 @@ from aws_schema_registry.avro import AvroSchema
 # In this example we will use kafka-python as our Kafka client,
 # so we need to have the `kafka-python` extras installed and use
 # the kafka adapter.
-from aws_schema_registry.adapter.kafka import SchemaRegistrySerializer
+from aws_schema_registry.adapter.kafka import KafkaSerializer
 from kafka import KafkaConsumer
 
 # Create the schema registry client, which is a façade around the boto3 glue client
@@ -75,7 +75,7 @@ client = SchemaRegistryClient(glue_client,
                               registry_name='my-registry')
 
 # Create the serializer
-serializer = SchemaRegistrySerializer(client)
+serializer = KafkaSerializer(client)
 
 # Create the producer
 producer = KafkaProducer(value_serializer=serializer)
@@ -91,7 +91,7 @@ data = {
     'favorite_number': 6
 }
 producer.send('my-topic', value=(data, schema))
-# the value MUST be a tuple when we're using the SchemaRegistrySerializer
+# the value MUST be a tuple when we're using the KafkaSerializer
 ```
 
 Read Kafka messages with `SchemaRegistryDeserializer`:
@@ -102,7 +102,7 @@ from aws_schema_registry import SchemaRegistryClient
 # In this example we will use kafka-python as our Kafka client,
 # so we need to have the `kafka-python` extras installed and use
 # the kafka adapter.
-from aws_schema_registry.adapter.kafka import SchemaRegistryDeserializer
+from aws_schema_registry.adapter.kafka import KafkaDeserializer
 from kafka import KafkaConsumer
 
 # Create the schema registry client, which is a façade around the boto3 glue client
@@ -110,7 +110,7 @@ client = SchemaRegistryClient(glue_client,
                               registry_name='my-registry')
 
 # Create the deserializer
-deserializer = SchemaRegistryDeserializer(client)
+deserializer = KafkaDeserializer(client)
 
 # Create the consumer
 consumer = KafkaConsumer('my-topic', value_deserializer=deserializer)
