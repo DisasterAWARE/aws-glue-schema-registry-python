@@ -5,7 +5,7 @@ import subprocess
 from aws_schema_registry import DataAndSchema, SchemaRegistryClient
 from aws_schema_registry.avro import AvroSchema
 from aws_schema_registry.adapter.kafka import (
-    SchemaRegistryDeserializer, SchemaRegistrySerializer
+    KafkaDeserializer, KafkaSerializer
 )
 
 LOG = logging.getLogger(__name__)
@@ -23,8 +23,8 @@ with open(os.path.join(os.path.dirname(__file__), 'user.avsc'), 'r') as f:
 
 def test_interop_with_java_library(glue_client, registry, boto_session):
     client = SchemaRegistryClient(glue_client, registry_name=registry)
-    serializer = SchemaRegistrySerializer(client)
-    deserializer = SchemaRegistryDeserializer(client)
+    serializer = KafkaSerializer(client)
+    deserializer = KafkaDeserializer(client)
 
     data = {
         'name': 'John Doe',

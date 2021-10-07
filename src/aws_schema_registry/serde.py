@@ -2,14 +2,8 @@ from __future__ import annotations
 
 import functools
 import logging
-import sys
 from typing import Any, NamedTuple
 from uuid import UUID
-
-if sys.version_info[1] < 8:  # for py37
-    from typing_extensions import Protocol
-else:
-    from typing import Protocol
 
 from aws_schema_registry.avro import AvroSchema
 from aws_schema_registry.client import SchemaRegistryClient
@@ -33,15 +27,7 @@ class DataAndSchema(NamedTuple):
     schema: Schema
 
 
-class Serializer(Protocol):
-    def serialize(self, topic: str, record: DataAndSchema): ...
-
-
-class Deserializer(Protocol):
-    def deserialize(self, topic: str, bytes_: bytes): ...
-
-
-class SchemaRegistrySerializer:
+class KafkaSerializer:
     """Kafka serializer that uses the AWS Schema Registry.
 
     Arguments:
@@ -94,7 +80,7 @@ class SchemaRegistrySerializer:
         )
 
 
-class SchemaRegistryDeserializer:
+class KafkaDeserializer:
     """Kafka serializer that uses the AWS Schema Registry.
 
     Arguments:
@@ -106,14 +92,16 @@ class SchemaRegistryDeserializer:
         secondary_deserializer: optional deserializer to pass through
             to when processing values with an unrecognized encoding.
             This is primarily use to migrate from other schema
-            registries or handle schema-less data.
+            registries or handle schema-less data. The secondary deserializer
+            should either be a callable taking the same arguments as
+            deserialize or an object with a matching deserialize method.
     """
 
     def __init__(
         self,
         client: SchemaRegistryClient,
         return_record_name: bool = False,
-        secondary_deserializer: Deserializer = None
+        secondary_deserializer=None
     ):
         self.client = client
         self.return_record_name = return_record_name
@@ -126,6 +114,8 @@ class SchemaRegistryDeserializer:
             data_bytes, schema_version_id = decode(bytes_)
         except UnknownEncodingException as e:
             if self.secondary_deserializer:
+                if callable(self.secondary_deserializer):
+                    return self.secondary_deserializer(topic, bytes_)
                 return self.secondary_deserializer.deserialize(topic, bytes_)
             else:
                 raise SchemaRegistryException(
