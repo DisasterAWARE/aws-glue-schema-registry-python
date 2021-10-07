@@ -32,15 +32,14 @@ Clone this repository and install it:
 python setup.py install -e .
 ```
 
-You most likely want to install one or more extras. For example, to use the schema registry with Avro schemas and [kafka-python](https://pypi.org/project/kafka-python/), you should install the `avro` and `kafka-python` extra:
+This library includes opt-in extra dependencies that enable support for certain features. For example, to use the schema registry with [kafka-python](https://pypi.org/project/kafka-python/), you should install the `kafka-python` extra:
 
 ```
-python setup.py install -e .[avro, kafka-python]
+python setup.py install -e .[kafka-python]
 ```
 
 Extra name | Purpose
 :--------- | :------
-avro | Allows using Apache Avro schemas, using `fastavro` as a backend
 kafka-python | Provides adapter classes to plug into `kafka-python`
 
 ## Usage
