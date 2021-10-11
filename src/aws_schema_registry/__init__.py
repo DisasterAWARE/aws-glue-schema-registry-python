@@ -5,7 +5,7 @@ from .schema import (
 )
 from .serde import DataAndSchema, KafkaDeserializer, KafkaSerializer
 
-__version__ = '1.0.0rc6'
+__version__ = '1.0.0'
 
 __all__ = [
     'CompatibilityMode',
