@@ -10,7 +10,7 @@ from aws_schema_registry.exception import SchemaRegistryException
 
 REGISTRY_NAME = 'user-topic'
 SCHEMA_NAME = 'User-Topic'
-JSON_SCHEMA_NAME = 'User-Topic'
+JSON_SCHEMA_NAME = 'User-Topic-json'
 SCHEMA_ARN = f'arn:aws:glue:us-west-2:123:schema/{REGISTRY_NAME}/{SCHEMA_NAME}'
 SCHEMA_VERSION_ID = UUID('b7b4a7f0-9c96-4e4a-a687-fb5de9ef0c63')
 JSON_SCHEMA_VERSION_ID = UUID('98718bb6-ca2a-4ac6-b841-748cab68b1b1')
