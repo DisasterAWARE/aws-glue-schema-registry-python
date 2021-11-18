@@ -7,10 +7,12 @@ import pytest
 
 from aws_schema_registry import DataAndSchema, SchemaRegistryClient
 from aws_schema_registry.avro import AvroSchema
+from aws_schema_registry.jsonschema import JsonSchema
 from aws_schema_registry.adapter.kafka import (
     KafkaDeserializer, KafkaSerializer
 )
-from aws_schema_registry.naming import record_name_strategy
+from aws_schema_registry.naming import (record_name_strategy,
+                                        topic_name_strategy)
 
 BOOTSTRAP_STRING = '127.0.0.1:9092'
 
@@ -24,6 +26,8 @@ with open(os.path.join(os.path.dirname(__file__), 'user.v1.avsc'), 'r') as f:
     SCHEMA_V1 = AvroSchema(f.read())
 with open(os.path.join(os.path.dirname(__file__), 'user.v2.avsc'), 'r') as f:
     SCHEMA_V2 = AvroSchema(f.read())
+with open(os.path.join(os.path.dirname(__file__), 'user.json'), 'r') as f:
+    SCHEMA_JSON = JsonSchema(f.read())
 
 PRODUCER_PROPERTIES = {
     'bootstrap_servers': BOOTSTRAP_STRING,
@@ -65,12 +69,25 @@ def test_produce_consume_with_ser_de_schema_registry(
     serializer = KafkaSerializer(
         client, schema_naming_strategy=record_name_strategy
     )
+
+    # jsonschema has no fqn, so we use topic_name_strategy for it
+    # (which also requires a separate producer)
+    json_serializer = KafkaSerializer(
+        client, schema_naming_strategy=topic_name_strategy
+    )
+
     deserializer = KafkaDeserializer(client)
 
     producer = KafkaProducer(
         value_serializer=serializer,
         **PRODUCER_PROPERTIES
     )
+
+    json_producer = KafkaProducer(
+        value_serializer=json_serializer,
+        **PRODUCER_PROPERTIES
+    )
+
     data1 = {
         'name': 'John Doe',
         'favorite_number': 6,
@@ -85,6 +102,13 @@ def test_produce_consume_with_ser_de_schema_registry(
     }
     producer.send(topic, DataAndSchema(data2, SCHEMA_V2))
 
+    data3 = {
+        'name': 'John Doe',
+        'favorite_number': 6,
+        'favorite_colors': ['red', 'blue', "yello"]
+    }
+    json_producer.send(topic, DataAndSchema(data3, SCHEMA_JSON))
+
     consumer = KafkaConsumer(
         topic,
         value_deserializer=deserializer,
@@ -93,8 +117,10 @@ def test_produce_consume_with_ser_de_schema_registry(
     batch = consumer.poll(timeout_ms=1000)
     assert len(batch) == 1
     messages = batch[list(batch.keys())[0]]
-    assert len(messages) == 2
+    assert len(messages) == 3
     assert messages[0].value.data == data1
     assert messages[0].value.schema == SCHEMA_V1
     assert messages[1].value.data == data2
     assert messages[1].value.schema == SCHEMA_V2
+    assert messages[2].value.data == data3
+    assert messages[2].value.schema == SCHEMA_JSON
