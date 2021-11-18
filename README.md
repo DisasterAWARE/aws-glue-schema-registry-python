@@ -14,7 +14,7 @@ Feature | Java Library | Python Library | Notes
 :------ | :----------- | :------------- | :----
 Serialization and deserialization using schema registry | ✔️ | ✔️
 Avro message format | ✔️ | ✔️
-JSON Schema message format | ✔️ | ❌
+JSON Schema message format | ✔️ | ✔️
 Kafka Streams support | ✔️ | | N/A for Python, Kafka Streams is Java-only
 Compression | ✔️ | ✔️ |
 Local schema cache | ✔️ | ✔️
