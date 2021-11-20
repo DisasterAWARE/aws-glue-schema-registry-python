@@ -45,9 +45,12 @@ class JsonSchema(Schema):
         return ""
 
     def read(self, bytes_: bytes):
-        return orjson.loads(bytes_)
+        data = orjson.loads(bytes_)
+        self.validate(data)
+        return data
 
     def write(self, data) -> bytes:
+        self.validate(data)
         return orjson.dumps(data)
 
     def validate(self, data):
