@@ -25,29 +25,56 @@ public class App {
     static Map<String, Object> configs = new HashMap<>();
 
     public static void main(String[] args) {
-        configs.put(AWSSchemaRegistryConstants.DATA_FORMAT, DataFormat.AVRO.name());
+        String dataFormat = Objects.requireNonNull(System.getenv("DATA_FORMAT"));
         configs.put(AWSSchemaRegistryConstants.AWS_REGION, Objects.requireNonNull(System.getenv("AWS_REGION")));
         configs.put(AWSSchemaRegistryConstants.REGISTRY_NAME, Objects.requireNonNull(System.getenv("REGISTRY_NAME")));
-//configs.put(AWSSchemaRegistryConstants.SCHEMA_NAME, Objects.requireNonNull(System.getenv("SCHEMA_NAME")));
+        configs.put(AWSSchemaRegistryConstants.SCHEMA_NAME, Objects.requireNonNull(System.getenv("SCHEMA_NAME")));
         configs.put(AWSSchemaRegistryConstants.SCHEMA_AUTO_REGISTRATION_SETTING, true);
-        configs.put(AWSSchemaRegistryConstants.AVRO_RECORD_TYPE, AvroRecordType.GENERIC_RECORD.getName());
-        try {
-            byte[] bytes;
-            GenericRecord record;
-            Schema schema;
 
-            bytes = System.in.readAllBytes();
+        if (dataFormat.equals("AVRO")) {
+            configs.put(AWSSchemaRegistryConstants.DATA_FORMAT, DataFormat.AVRO.name());
+            configs.put(AWSSchemaRegistryConstants.AVRO_RECORD_TYPE, AvroRecordType.GENERIC_RECORD.getName());
+            try {
+                byte[] bytes;
+                GenericRecord record;
+                Schema schema;
 
-            GlueSchemaRegistryKafkaDeserializer deserializer = new GlueSchemaRegistryKafkaDeserializer(configs);
-            record = (GenericRecord) deserializer.deserialize("test", bytes);
-            schema = record.getSchema();
+                bytes = System.in.readAllBytes();
 
-            GlueSchemaRegistryKafkaSerializer serializer = new GlueSchemaRegistryKafkaSerializer(configs);
-            bytes = serializer.serialize("test", record);
+                GlueSchemaRegistryKafkaDeserializer deserializer = new GlueSchemaRegistryKafkaDeserializer(configs);
+                record = (GenericRecord) deserializer.deserialize("test", bytes);
+                schema = record.getSchema();
 
-            System.out.write(bytes, 0, bytes.length);
-        } catch (IOException e) {
-            e.printStackTrace();
+                GlueSchemaRegistryKafkaSerializer serializer = new GlueSchemaRegistryKafkaSerializer(configs);
+                bytes = serializer.serialize("test", record);
+
+                System.out.write(bytes, 0, bytes.length);
+            } catch (IOException e) {
+                e.printStackTrace();
+                System.exit(1);
+            }
+        } else if (dataFormat.equals("JSON")) {
+            configs.put(AWSSchemaRegistryConstants.DATA_FORMAT, DataFormat.JSON.name());
+                try {
+                    byte[] bytes;
+                    Object record;
+                    Schema schema;
+
+                    bytes = System.in.readAllBytes();
+
+                    GlueSchemaRegistryKafkaDeserializer deserializer = new GlueSchemaRegistryKafkaDeserializer(configs);
+                    record = deserializer.deserialize("test", bytes);
+
+                    GlueSchemaRegistryKafkaSerializer serializer = new GlueSchemaRegistryKafkaSerializer(configs);
+                    bytes = serializer.serialize("test", record);
+
+                    System.out.write(bytes, 0, bytes.length);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    System.exit(1);
+                }
+        } else {
+            System.out.println("Only JSON or AVRO are acceptable data formats");
             System.exit(1);
         }
     }

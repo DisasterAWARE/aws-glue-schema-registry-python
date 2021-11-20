@@ -2,8 +2,11 @@ import logging
 import os
 import subprocess
 
+import pytest
+
 from aws_schema_registry import DataAndSchema, SchemaRegistryClient
 from aws_schema_registry.avro import AvroSchema
+from aws_schema_registry.jsonschema import JsonSchema
 from aws_schema_registry.adapter.kafka import (
     KafkaDeserializer, KafkaSerializer
 )
@@ -20,10 +23,18 @@ JAR_LOCATION = os.path.join(
 with open(os.path.join(os.path.dirname(__file__), 'user.avsc'), 'r') as f:
     SCHEMA = AvroSchema(f.read())
 
+with open(os.path.join(os.path.dirname(__file__), 'user.json'), 'r') as f:
+    JSON_SCHEMA = JsonSchema(f.read())
 
-def test_interop_with_java_library(glue_client, registry, boto_session):
+
+def _topic_name_schema_type_name_strategy(topic, is_key, schema):
+    return f"{topic}-{'key' if is_key else 'value'}-{schema.data_format}"
+
+
+@pytest.mark.parametrize("schema", [SCHEMA, JSON_SCHEMA])
+def test_interop_with_java_library(glue_client, registry, boto_session, schema):
     client = SchemaRegistryClient(glue_client, registry_name=registry)
-    serializer = KafkaSerializer(client)
+    serializer = KafkaSerializer(client, schema_naming_strategy=_topic_name_schema_type_name_strategy)
     deserializer = KafkaDeserializer(client)
 
     data = {
@@ -32,7 +43,7 @@ def test_interop_with_java_library(glue_client, registry, boto_session):
         'favorite_color': 'red'
     }
     serialized: bytes = serializer.serialize(
-        'test', DataAndSchema(data, SCHEMA)
+        'test', DataAndSchema(data, schema)
     )
 
     if not os.path.exists(JAR_LOCATION):
@@ -45,19 +56,21 @@ def test_interop_with_java_library(glue_client, registry, boto_session):
         input=serialized,
         capture_output=True,
         env={
+            'DATA_FORMAT': schema.data_format,
             'AWS_ACCESS_KEY_ID': credentials.access_key,
             'AWS_SECRET_ACCESS_KEY': credentials.secret_key,
             'AWS_SESSION_TOKEN': credentials.token,
             'AWS_REGION': boto_session.region_name,
             'REGISTRY_NAME': registry,
-            'SCHEMA_NAME': 'sometestschema'
+            'SCHEMA_NAME': _topic_name_schema_type_name_strategy("test", False, schema)
         }
     )
+    print(proc.stderr)
     proc.check_returncode()
     deserialized = deserializer.deserialize('test', proc.stdout)
     assert deserialized
     assert deserialized.data == data
-    assert deserialized.schema == SCHEMA
+    assert deserialized.schema == schema
 
 
 def compile_java():

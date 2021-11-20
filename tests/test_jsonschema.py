@@ -31,6 +31,35 @@ def test_readwrite():
     assert s.read(s.write(d)) == d
 
 
+def test_validation_during_read_write():
+    s = JsonSchema("""{
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "age": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "name",
+            "age"
+          ]
+        }""")
+
+    with pytest.raises(ValidationError, match=re.escape(
+        "data.name must be string"
+    )):
+        s.read(b'{"name": 1, "age": 2}')
+
+    with pytest.raises(ValidationError, match=re.escape(
+        "data.name must be string"
+    )):
+        s.write({"name": 1, "age": 2})
+
+
 def test_validation():
     s = JsonSchema("""{
       "$schema": "http://json-schema.org/draft-04/schema#",
@@ -52,12 +81,10 @@ def test_validation():
     with pytest.raises(ValidationError, match=re.escape(
         "data must contain ['name', 'age'] properties"
     )):
-
         s.validate({'name': 'Obi-Wan'})
     with pytest.raises(ValidationError, match=re.escape(
         "data.name must be string"
     )):
-
         s.validate({'name': 1, 'age': 2})
 
     s.validate({'name': 'Jar Jar', 'age': 42, 'sith': True})
@@ -83,5 +110,4 @@ def test_validation():
     with pytest.raises(ValidationError, match=re.escape(
         "data must not contain {'sith'} properties"
     )):
-
         s.validate({'name': 'Jar Jar', 'age': 42, 'sith': True})
