@@ -32,9 +32,12 @@ def _topic_name_schema_type_name_strategy(topic, is_key, schema):
 
 
 @pytest.mark.parametrize("schema", [SCHEMA, JSON_SCHEMA])
-def test_interop_with_java_library(glue_client, registry, boto_session, schema):
+def test_interop_with_java_library(glue_client, registry,
+                                   boto_session, schema):
     client = SchemaRegistryClient(glue_client, registry_name=registry)
-    serializer = KafkaSerializer(client, schema_naming_strategy=_topic_name_schema_type_name_strategy)
+    serializer = KafkaSerializer(
+        client,
+        schema_naming_strategy=_topic_name_schema_type_name_strategy)
     deserializer = KafkaDeserializer(client)
 
     data = {
@@ -62,7 +65,8 @@ def test_interop_with_java_library(glue_client, registry, boto_session, schema):
             'AWS_SESSION_TOKEN': credentials.token,
             'AWS_REGION': boto_session.region_name,
             'REGISTRY_NAME': registry,
-            'SCHEMA_NAME': _topic_name_schema_type_name_strategy("test", False, schema)
+            'SCHEMA_NAME': _topic_name_schema_type_name_strategy(
+                "test", False, schema)
         }
     )
     print(proc.stderr)
