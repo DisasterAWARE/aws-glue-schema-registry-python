@@ -6,6 +6,7 @@ from typing import Any, NamedTuple
 from uuid import UUID
 
 from aws_schema_registry.avro import AvroSchema
+from aws_schema_registry.jsonschema import JsonSchema
 from aws_schema_registry.client import SchemaRegistryClient
 from aws_schema_registry.codec import decode, encode, UnknownEncodingException
 from aws_schema_registry.exception import SchemaRegistryException
@@ -61,7 +62,7 @@ class KafkaSerializer:
         if data_and_schema is None:
             return None
         if not isinstance(data_and_schema, tuple):
-            raise TypeError('AvroSerializer can only serialize',
+            raise TypeError('KafkaSerializer can only serialize',
                             f' {tuple}, got {type(data_and_schema)}')
         data, schema = data_and_schema
         schema_version = self._get_schema_version(topic, schema)
@@ -136,4 +137,4 @@ class KafkaDeserializer:
         if version.data_format == 'AVRO':
             return AvroSchema(version.definition)
         elif version.data_format == 'JSON':
-            raise NotImplementedError('JSON schema not supported')
+            return JsonSchema(version.definition)
