@@ -83,54 +83,67 @@ def test_get_schema_by_definition(client, glue_client):
     assert version.version_id == SCHEMA_VERSION_ID
 
 
+def test_get_or_register_schema_version_default_does_not_create_schema(client, glue_client):
+    glue_client.get_schema_by_definition = Mock(
+        side_effect=SchemaRegistryException(
+            Exception(SCHEMA_NOT_FOUND_MSG)
+        ))
+    stub_create_schema(glue_client)
+    stub_get_schema_version(glue_client, 'AVRO')
+
+    with pytest.raises(SchemaRegistryException) as expected_exception:
+        get_or_register_schema_version(client, 'AVRO', False)
+
+    assert SCHEMA_NOT_FOUND_MSG in str(expected_exception)
+
+    stub_get_schema_version(glue_client, 'JSON')
+
+    with pytest.raises(SchemaRegistryException) as expected_exception:
+        get_or_register_schema_version(client, 'JSON', False)
+
+    assert SCHEMA_NOT_FOUND_MSG in str(expected_exception)
+
+
 def test_get_or_register_schema_version_creates_schema(client, glue_client):
     glue_client.get_schema_by_definition = Mock(
         side_effect=SchemaRegistryException(
             Exception(SCHEMA_NOT_FOUND_MSG)
         ))
-    glue_client.create_schema = Mock(return_value={
-        'RegistryName': REGISTRY_NAME,
-        'SchemaName': SCHEMA_NAME,
-        'Description': '',
-        'DataFormat': 'AVRO',
-        'Compatibility': 'BACKWARD',
-        'SchemaStatus': 'AVAILABLE',
-        'SchemaVersionId': str(SCHEMA_VERSION_ID),
-        'SchemaVersionStatus': 'AVAILABLE'
-    })
-    glue_client.get_schema_version = Mock(return_value={
-        'SchemaVersionId': str(SCHEMA_VERSION_ID),
-        'SchemaDefinition': SCHEMA_DEF,
-        'DataFormat': 'AVRO',
-        'SchemaArn': SCHEMA_ARN,
-        'VersionNumber': 123,
-        'Status': 'AVAILABLE'
-    })
+    stub_create_schema(glue_client)
+    stub_get_schema_version(glue_client, 'AVRO')
 
-    version = client.get_or_register_schema_version(
-        definition=SCHEMA_DEF,
-        schema_name=SCHEMA_NAME,
-        data_format='AVRO'
-    )
+    version = get_or_register_schema_version(client, 'AVRO', True)
 
     assert version.version_id == SCHEMA_VERSION_ID
 
-    glue_client.get_schema_version = Mock(return_value={
-        'SchemaVersionId': str(SCHEMA_VERSION_ID),
-        'SchemaDefinition': SCHEMA_DEF,
-        'DataFormat': 'JSON',
-        'SchemaArn': SCHEMA_ARN,
-        'VersionNumber': 123,
-        'Status': 'AVAILABLE'
-    })
+    stub_get_schema_version(glue_client, 'JSON')
 
-    version = client.get_or_register_schema_version(
-        definition=SCHEMA_DEF,
-        schema_name=SCHEMA_NAME,
-        data_format='JSON'
-    )
+    version = get_or_register_schema_version(client, 'JSON', True)
 
     assert version.version_id == SCHEMA_VERSION_ID
+
+
+def test_get_or_register_schema_version_default_does_not_register_version(
+    client, glue_client
+):
+    glue_client.get_schema_by_definition = Mock(
+        side_effect=SchemaRegistryException(
+            Exception(SCHEMA_VERSION_NOT_FOUND_MSG)
+        ))
+    stub_register_schema_version(glue_client)
+    stub_get_schema_version(glue_client, 'AVRO')
+
+    with pytest.raises(SchemaRegistryException) as expected_exception:
+        get_or_register_schema_version(client, 'AVRO', False)
+
+    assert SCHEMA_VERSION_NOT_FOUND_MSG in str(expected_exception)
+
+    stub_get_schema_version(glue_client, 'JSON')
+
+    with pytest.raises(SchemaRegistryException) as expected_exception:
+        get_or_register_schema_version(client, 'JSON', False)
+
+    assert SCHEMA_VERSION_NOT_FOUND_MSG in str(expected_exception)
 
 
 def test_get_or_register_schema_version_registers_version(
@@ -140,25 +153,16 @@ def test_get_or_register_schema_version_registers_version(
         side_effect=SchemaRegistryException(
             Exception(SCHEMA_VERSION_NOT_FOUND_MSG)
         ))
-    glue_client.register_schema_version = Mock(return_value={
-        'SchemaVersionId': str(SCHEMA_VERSION_ID),
-        'VersionNumber': 123,
-        'Status': 'AVAILABLE'
-    })
-    glue_client.get_schema_version = Mock(return_value={
-        'SchemaVersionId': str(SCHEMA_VERSION_ID),
-        'SchemaDefinition': SCHEMA_DEF,
-        'DataFormat': 'AVRO',
-        'SchemaArn': SCHEMA_ARN,
-        'VersionNumber': 123,
-        'Status': 'AVAILABLE'
-    })
+    stub_register_schema_version(glue_client)
+    stub_get_schema_version(glue_client, 'AVRO')
 
-    version = client.get_or_register_schema_version(
-        definition=SCHEMA_DEF,
-        schema_name=SCHEMA_NAME,
-        data_format='AVRO'
-    )
+    version = get_or_register_schema_version(client, 'AVRO', True)
+
+    assert version.version_id == SCHEMA_VERSION_ID
+
+    stub_get_schema_version(glue_client, 'JSON')
+
+    version = get_or_register_schema_version(client, 'JSON', True)
 
     assert version.version_id == SCHEMA_VERSION_ID
 
@@ -255,3 +259,44 @@ def test_create_schema(client, glue_client, data_format):
     )
 
     assert version_id == schema_version_id
+
+
+def stub_get_schema_version(glue_client, data_format):
+    glue_client.get_schema_version = Mock(return_value={
+        'SchemaVersionId': str(SCHEMA_VERSION_ID),
+        'SchemaDefinition': SCHEMA_DEF,
+        'DataFormat': data_format,
+        'SchemaArn': SCHEMA_ARN,
+        'VersionNumber': 123,
+        'Status': 'AVAILABLE'
+    })
+
+
+def stub_register_schema_version(glue_client):
+    glue_client.register_schema_version = Mock(return_value={
+        'SchemaVersionId': str(SCHEMA_VERSION_ID),
+        'VersionNumber': 123,
+        'Status': 'AVAILABLE'
+    })
+
+
+def stub_create_schema(glue_client):
+    glue_client.create_schema = Mock(return_value={
+        'RegistryName': REGISTRY_NAME,
+        'SchemaName': SCHEMA_NAME,
+        'Description': '',
+        'DataFormat': 'AVRO',
+        'Compatibility': 'BACKWARD',
+        'SchemaStatus': 'AVAILABLE',
+        'SchemaVersionId': str(SCHEMA_VERSION_ID),
+        'SchemaVersionStatus': 'AVAILABLE'
+    })
+
+
+def get_or_register_schema_version(client, data_format, auto_register_schema):
+    return client.get_or_register_schema_version(
+        definition=SCHEMA_DEF,
+        schema_name=SCHEMA_NAME,
+        data_format=data_format,
+        auto_register_schema=auto_register_schema
+    )

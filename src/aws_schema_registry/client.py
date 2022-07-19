@@ -138,7 +138,8 @@ class SchemaRegistryClient:
         schema_name: str,
         data_format: DataFormat,
         compatibility_mode: CompatibilityMode = DEFAULT_COMPATIBILITY_MODE,
-        metadata: Mapping[str, str] = None
+        auto_register_schema: bool = False,
+        metadata: Mapping[str, str] = None,
     ) -> SchemaVersion:
         """Get Schema Version ID by following below steps:
 
@@ -159,6 +160,9 @@ class SchemaRegistryClient:
             compatibility_mode: which compatibility mode to use if
                 creating the schema. Has no effect if the schema by
                 name already exists.
+            auto_register_schema: whether to register new schema or
+                new schema version if one or the other does not exist
+                in registry
             metadata: optional metadata to add to the schema version
                 if registering a new version. Has no effect if a
                 schema version matching the specified definition already
@@ -171,11 +175,15 @@ class SchemaRegistryClient:
         except SchemaRegistryException as e:
             cause_msg = str(e.__cause__)
             if SCHEMA_VERSION_NOT_FOUND_MSG in cause_msg:
+                if not auto_register_schema:
+                    raise SchemaRegistryException(SCHEMA_VERSION_NOT_FOUND_MSG) from e
                 LOG.debug(cause_msg)
                 version_id = self.register_schema_version(
                     definition, schema_name, metadata
                 )
             elif SCHEMA_NOT_FOUND_MSG in cause_msg:
+                if not auto_register_schema:
+                    raise SchemaRegistryException(SCHEMA_NOT_FOUND_MSG) from e
                 LOG.debug(cause_msg)
                 version_id = self.create_schema(
                     schema_name, data_format, definition, compatibility_mode,
