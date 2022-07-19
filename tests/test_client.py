@@ -88,15 +88,15 @@ def test_get_or_register_schema_version_default_does_not_create_schema(client, g
         side_effect=SchemaRegistryException(
             Exception(SCHEMA_NOT_FOUND_MSG)
         ))
-    stub_create_schema(glue_client)
-    stub_get_schema_version(glue_client, 'AVRO')
+    mock_create_schema(glue_client)
+    mock_get_schema_version(glue_client, 'AVRO')
 
     with pytest.raises(SchemaRegistryException) as expected_exception:
         get_or_register_schema_version(client, 'AVRO', False)
 
     assert SCHEMA_NOT_FOUND_MSG in str(expected_exception)
 
-    stub_get_schema_version(glue_client, 'JSON')
+    mock_get_schema_version(glue_client, 'JSON')
 
     with pytest.raises(SchemaRegistryException) as expected_exception:
         get_or_register_schema_version(client, 'JSON', False)
@@ -109,14 +109,14 @@ def test_get_or_register_schema_version_creates_schema(client, glue_client):
         side_effect=SchemaRegistryException(
             Exception(SCHEMA_NOT_FOUND_MSG)
         ))
-    stub_create_schema(glue_client)
-    stub_get_schema_version(glue_client, 'AVRO')
+    mock_create_schema(glue_client)
+    mock_get_schema_version(glue_client, 'AVRO')
 
     version = get_or_register_schema_version(client, 'AVRO', True)
 
     assert version.version_id == SCHEMA_VERSION_ID
 
-    stub_get_schema_version(glue_client, 'JSON')
+    mock_get_schema_version(glue_client, 'JSON')
 
     version = get_or_register_schema_version(client, 'JSON', True)
 
@@ -130,15 +130,15 @@ def test_get_or_register_schema_version_default_does_not_register_version(
         side_effect=SchemaRegistryException(
             Exception(SCHEMA_VERSION_NOT_FOUND_MSG)
         ))
-    stub_register_schema_version(glue_client)
-    stub_get_schema_version(glue_client, 'AVRO')
+    mock_register_schema_version(glue_client)
+    mock_get_schema_version(glue_client, 'AVRO')
 
     with pytest.raises(SchemaRegistryException) as expected_exception:
         get_or_register_schema_version(client, 'AVRO', False)
 
     assert SCHEMA_VERSION_NOT_FOUND_MSG in str(expected_exception)
 
-    stub_get_schema_version(glue_client, 'JSON')
+    mock_get_schema_version(glue_client, 'JSON')
 
     with pytest.raises(SchemaRegistryException) as expected_exception:
         get_or_register_schema_version(client, 'JSON', False)
@@ -153,14 +153,14 @@ def test_get_or_register_schema_version_registers_version(
         side_effect=SchemaRegistryException(
             Exception(SCHEMA_VERSION_NOT_FOUND_MSG)
         ))
-    stub_register_schema_version(glue_client)
-    stub_get_schema_version(glue_client, 'AVRO')
+    mock_register_schema_version(glue_client)
+    mock_get_schema_version(glue_client, 'AVRO')
 
     version = get_or_register_schema_version(client, 'AVRO', True)
 
     assert version.version_id == SCHEMA_VERSION_ID
 
-    stub_get_schema_version(glue_client, 'JSON')
+    mock_get_schema_version(glue_client, 'JSON')
 
     version = get_or_register_schema_version(client, 'JSON', True)
 
@@ -261,7 +261,7 @@ def test_create_schema(client, glue_client, data_format):
     assert version_id == schema_version_id
 
 
-def stub_get_schema_version(glue_client, data_format):
+def mock_get_schema_version(glue_client, data_format):
     glue_client.get_schema_version = Mock(return_value={
         'SchemaVersionId': str(SCHEMA_VERSION_ID),
         'SchemaDefinition': SCHEMA_DEF,
@@ -272,7 +272,7 @@ def stub_get_schema_version(glue_client, data_format):
     })
 
 
-def stub_register_schema_version(glue_client):
+def mock_register_schema_version(glue_client):
     glue_client.register_schema_version = Mock(return_value={
         'SchemaVersionId': str(SCHEMA_VERSION_ID),
         'VersionNumber': 123,
@@ -280,7 +280,7 @@ def stub_register_schema_version(glue_client):
     })
 
 
-def stub_create_schema(glue_client):
+def mock_create_schema(glue_client):
     glue_client.create_schema = Mock(return_value={
         'RegistryName': REGISTRY_NAME,
         'SchemaName': SCHEMA_NAME,
