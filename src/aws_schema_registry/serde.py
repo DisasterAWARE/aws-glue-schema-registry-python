@@ -51,12 +51,14 @@ class KafkaSerializer:
         client: SchemaRegistryClient,
         is_key: bool = False,
         compatibility_mode: CompatibilityMode = 'BACKWARD',
-        schema_naming_strategy: SchemaNamingStrategy = topic_name_strategy
+        schema_naming_strategy: SchemaNamingStrategy = topic_name_strategy,
+        auto_register_schema: bool = False
     ):
         self.client = client
         self.is_key = is_key
         self.compatibility_mode: CompatibilityMode = compatibility_mode
         self.schema_naming_strategy = schema_naming_strategy
+        self.auto_register_schema = auto_register_schema
 
     def serialize(self, topic: str, data_and_schema: DataAndSchema):
         if data_and_schema is None:
@@ -73,12 +75,10 @@ class KafkaSerializer:
     def _get_schema_version(self, topic: str, schema: Schema) -> SchemaVersion:
         schema_name = self.schema_naming_strategy(topic, self.is_key, schema)
         LOG.info('Fetching schema %s...', schema_name)
-        return self.client.get_or_register_schema_version(
-            definition=str(schema),
-            schema_name=schema_name,
-            data_format=schema.data_format,
-            compatibility_mode=self.compatibility_mode
-        )
+        return self.client.get_or_register_schema_version(definition=str(schema), schema_name=schema_name,
+                                                          data_format=schema.data_format,
+                                                          compatibility_mode=self.compatibility_mode,
+                                                          auto_register_schema=self.auto_register_schema)
 
 
 class KafkaDeserializer:
