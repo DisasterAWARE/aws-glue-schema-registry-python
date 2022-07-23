@@ -10,9 +10,6 @@ from aws_schema_registry.jsonschema import JsonSchema
 from aws_schema_registry.client import SchemaRegistryClient
 from aws_schema_registry.codec import decode, encode, UnknownEncodingException
 from aws_schema_registry.exception import SchemaRegistryException
-from aws_schema_registry.naming import (
-    SchemaNamingStrategy, topic_name_strategy
-)
 from aws_schema_registry.schema import CompatibilityMode, Schema, SchemaVersion
 
 LOG = logging.getLogger(__name__)
@@ -33,49 +30,40 @@ class KafkaSerializer:
 
     Arguments:
         client: instance of SchemaRegistryClient
-        is_key (optional): whether the serializer is serializing keys as
-            opposed to values. Defaults to false. Setting this to the
-            appropriate value is important to avoid mixing key and value
-            schemas if using the default schema name strategy.
         compatibility_mode (optional): the compatibility mode t use if
             creating a new schema in the registry. Defaults to the
             registry's default compatibility setting if not specified.
-        schema_naming_strategy (optional): how to choose the schema name
-            when creating new schemas. Defaults to the topic name
-            strategy. See the `naming` module for more information and
-            alternate strategies.
+        auto_register_schema (optional): whether to register new schema or
+                new schema version if one or the other does not exist
+                in registry
     """
 
     def __init__(
         self,
         client: SchemaRegistryClient,
-        is_key: bool = False,
         compatibility_mode: CompatibilityMode = 'BACKWARD',
-        schema_naming_strategy: SchemaNamingStrategy = topic_name_strategy,
         auto_register_schema: bool = False
     ):
         self.client = client
-        self.is_key = is_key
         self.compatibility_mode: CompatibilityMode = compatibility_mode
-        self.schema_naming_strategy = schema_naming_strategy
         self.auto_register_schema = auto_register_schema
 
-    def serialize(self, topic: str, data_and_schema: DataAndSchema):
+    def serialize(self, data_and_schema: DataAndSchema):
         if data_and_schema is None:
             return None
         if not isinstance(data_and_schema, tuple):
             raise TypeError('KafkaSerializer can only serialize',
                             f' {tuple}, got {type(data_and_schema)}')
         data, schema = data_and_schema
-        schema_version = self._get_schema_version(topic, schema)
+        schema_name = schema.fqn.split(".")[-1]
+        schema_version = self._get_schema_version(schema, schema_name)
         serialized = schema.write(data)
         return encode(serialized, schema_version.version_id)
 
     @functools.lru_cache(maxsize=None)
-    def _get_schema_version(self, topic: str, schema: Schema) -> SchemaVersion:
-        schema_name = self.schema_naming_strategy(topic, self.is_key, schema)
-        LOG.info('Fetching schema %s...', schema_name)
-        return self.client.get_or_register_schema_version(definition=str(schema), schema_name=schema_name,
+    def _get_schema_version(self, schema: Schema, schema_name: str) -> SchemaVersion:
+        return self.client.get_or_register_schema_version(definition=str(schema),
+                                                          schema_name=schema_name,
                                                           data_format=schema.data_format,
                                                           compatibility_mode=self.compatibility_mode,
                                                           auto_register_schema=self.auto_register_schema)
