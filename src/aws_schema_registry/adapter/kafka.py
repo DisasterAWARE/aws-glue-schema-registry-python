@@ -16,7 +16,7 @@ class KafkaSerializer(Serializer):
         self._serializer = _KafkaSerializer(*args, **kwargs)
 
     def serialize(self, topic, value):
-        return self._serializer.serialize(topic, value)
+        return self._serializer.serialize(value)
 
 
 class KafkaDeserializer(Deserializer):
