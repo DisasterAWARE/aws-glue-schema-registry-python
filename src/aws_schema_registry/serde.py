@@ -8,9 +8,8 @@ from uuid import UUID
 from aws_schema_registry.avro import AvroSchema
 from aws_schema_registry.jsonschema import JsonSchema
 from aws_schema_registry.client import SchemaRegistryClient
-from aws_schema_registry.codec import decode, encode, UnknownEncodingException
-from aws_schema_registry.exception import SchemaRegistryException
-from aws_schema_registry.schema import CompatibilityMode, Schema, SchemaVersion
+from aws_schema_registry.codec import decode, encode
+from aws_schema_registry.schema import Schema, SchemaVersion
 
 LOG = logging.getLogger(__name__)
 
@@ -41,12 +40,8 @@ class KafkaSerializer:
     def __init__(
         self,
         client: SchemaRegistryClient,
-        compatibility_mode: CompatibilityMode = 'BACKWARD',
-        auto_register_schema: bool = False
     ):
         self.client = client
-        self.compatibility_mode: CompatibilityMode = compatibility_mode
-        self.auto_register_schema = auto_register_schema
 
     def serialize(self, data_and_schema: DataAndSchema):
         if data_and_schema is None:
@@ -62,11 +57,10 @@ class KafkaSerializer:
 
     @functools.lru_cache(maxsize=None)
     def _get_schema_version(self, schema: Schema, schema_name: str) -> SchemaVersion:
-        return self.client.get_or_register_schema_version(definition=str(schema),
-                                                          schema_name=schema_name,
-                                                          data_format=schema.data_format,
-                                                          compatibility_mode=self.compatibility_mode,
-                                                          auto_register_schema=self.auto_register_schema)
+        return self.client.get_schema_by_definition(
+            definition=str(schema),
+            schema_name=schema_name,
+        )
 
 
 class KafkaDeserializer:
@@ -90,34 +84,21 @@ class KafkaDeserializer:
         self,
         client: SchemaRegistryClient,
         return_record_name: bool = False,
-        secondary_deserializer=None
     ):
         self.client = client
         self.return_record_name = return_record_name
-        self.secondary_deserializer = secondary_deserializer
 
-    def deserialize(self, topic: str, bytes_: bytes):
+    def deserialize(self, bytes_: bytes):
         if bytes_ is None:
             return None
-        try:
-            data_bytes, schema_version_id = decode(bytes_)
-        except UnknownEncodingException as e:
-            if self.secondary_deserializer:
-                if callable(self.secondary_deserializer):
-                    return self.secondary_deserializer(topic, bytes_)
-                return self.secondary_deserializer.deserialize(topic, bytes_)
-            else:
-                raise SchemaRegistryException(
-                    'no secondary deserializer provided to handle'
-                    ' unrecognized data encoding'
-                ) from e
+
+        data_bytes, schema_version_id = decode(bytes_)
         writer_schema_version = self._get_schema_version(schema_version_id)
         writer_schema = self._schema_for_version(writer_schema_version)
         return DataAndSchema(writer_schema.read(data_bytes), writer_schema)
 
     @functools.lru_cache(maxsize=None)
     def _get_schema_version(self, version_id: UUID):
-        LOG.info('Fetching schema version %s...', version_id)
         return self.client.get_schema_version(version_id)
 
     @functools.lru_cache(maxsize=None)
