@@ -1,8 +1,19 @@
 import re
 import pytest
 
+import fastjsonschema
+
 from aws_schema_registry import ValidationError
 from aws_schema_registry.jsonschema import JsonSchema
+
+FAST_JSON_SCHEMA_REPORTS_ONLY_MISSING = True
+try:
+    fastjsonschema_major_version = int(fastjsonschema.VERSION.split('.')[0])
+    fastjsonschema_minor_version = int(fastjsonschema.VERSION.split('.')[1])
+    if fastjsonschema_major_version == 2 and fastjsonschema_minor_version < 18:
+        FAST_JSON_SCHEMA_REPORTS_ONLY_MISSING = False
+except Exception:
+    pass
 
 
 def test_readwrite():
@@ -78,9 +89,11 @@ def test_validation():
       ]
     }""")
 
-    with pytest.raises(ValidationError, match=re.escape(
-        "data must contain ['name', 'age'] properties"
-    )):
+    if FAST_JSON_SCHEMA_REPORTS_ONLY_MISSING:
+        error_msg = "data must contain ['age'] properties"
+    else:
+        error_msg = "data must contain ['name', 'age'] properties"
+    with pytest.raises(ValidationError, match=re.escape(error_msg)):
         s.validate({'name': 'Obi-Wan'})
     with pytest.raises(ValidationError, match=re.escape(
         "data.name must be string"

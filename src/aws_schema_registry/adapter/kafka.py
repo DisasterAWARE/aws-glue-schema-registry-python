@@ -3,7 +3,7 @@
 https://pypi.org/project/kafka-python/
 """
 
-from kafka import Serializer, Deserializer
+from kafka.serializer import Serializer, Deserializer
 
 from aws_schema_registry import (
     KafkaSerializer as _KafkaSerializer,
