@@ -1,9 +1,8 @@
 from datetime import datetime
 import os
 
-from kafka.admin import KafkaAdminClient, NewTopic
-from kafka.consumer import KafkaConsumer
-from kafka.producer import KafkaProducer
+from kafka import KafkaAdminClient, KafkaProducer, KafkaConsumer
+from kafka.admin import NewTopic
 import pytest
 
 from aws_schema_registry import DataAndSchema, SchemaRegistryClient
