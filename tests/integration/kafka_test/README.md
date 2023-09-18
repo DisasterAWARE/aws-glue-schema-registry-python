@@ -4,4 +4,4 @@ Tests that the serializer and deserializer works correctly with a real Kafka clu
 
 Requires [Docker](https://www.docker.com/). Tested with Docker v20.
 
-Run `docker-compose up -d -f tests/integration/kafka/docker-compose.yml` before running these tests. Destroy the docker stack with `docker-compose down -f tests/integration/kafka/docker-compose.yml`.
+Run `docker compose -f tests/integration/kafka_test/docker-compose.yml up -d` before running these tests. Destroy the docker stack with `docker compose -f tests/integration/kafka_test/docker-compose.yml down`.
