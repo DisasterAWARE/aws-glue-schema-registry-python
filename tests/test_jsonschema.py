@@ -78,9 +78,12 @@ def test_validation():
       ]
     }""")
 
-    with pytest.raises(ValidationError, match=re.escape(
-        "data must contain ['name', 'age'] properties"
-    )):
+    with pytest.raises(
+        ValidationError,
+        # fastjsonschema>=2.18.0 reports only missing properties, so it will
+        # exclude 'name'
+        match=r"data must contain \[('name', )?'age'\] properties"
+    ):
         s.validate({'name': 'Obi-Wan'})
     with pytest.raises(ValidationError, match=re.escape(
         "data.name must be string"

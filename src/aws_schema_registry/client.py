@@ -3,7 +3,7 @@ import logging
 import time
 import random
 import string
-from typing import ContextManager, Mapping
+from typing import ContextManager, Mapping, Optional
 from uuid import UUID
 
 from aws_schema_registry.schema import (
@@ -138,7 +138,7 @@ class SchemaRegistryClient:
         schema_name: str,
         data_format: DataFormat,
         compatibility_mode: CompatibilityMode = DEFAULT_COMPATIBILITY_MODE,
-        metadata: Mapping[str, str] = None
+        metadata: Optional[Mapping[str, str]] = None
     ) -> SchemaVersion:
         """Get Schema Version ID by following below steps:
 
@@ -193,7 +193,7 @@ class SchemaRegistryClient:
         self,
         definition: str,
         schema_name: str,
-        metadata: Mapping[str, str] = None
+        metadata: Optional[Mapping[str, str]] = None
     ) -> UUID:
         """Register a new version to an existing schema.
 
@@ -281,7 +281,7 @@ class SchemaRegistryClient:
         data_format: DataFormat,
         definition: str,
         compatibility_mode: CompatibilityMode = DEFAULT_COMPATIBILITY_MODE,
-        metadata: Mapping[str, str] = None
+        metadata: Optional[Mapping[str, str]] = None
     ) -> UUID:
         """Create a new schema and return the version id."""
         try:
