@@ -191,3 +191,14 @@ tox
 ```
 
 Note that Tox requires the tested python versions to be installed. One convenient way to manage this is using [pyenv](https://github.com/pyenv/pyenv#installation). See the `.python-versions` file for the Python versions that need to be installed.
+
+
+### Releases
+
+Assuming pypi permissions:
+
+```
+python -m build
+twine upload -r testpypi dist/*
+twine upload dist/*
+```
