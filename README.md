@@ -29,13 +29,13 @@ Kafka Connect support | ✔️ | | N/A for Python, Kafka Connect is Java-only
 Clone this repository and install it:
 
 ```
-python setup.py install -e .
+pip install -e .
 ```
 
 This library includes opt-in extra dependencies that enable support for certain features. For example, to use the schema registry with [kafka-python](https://pypi.org/project/kafka-python/), you should install the `kafka-python` extra:
 
 ```
-python setup.py install -e .[kafka-python]
+pip install -e .[kafka-python]
 ```
 
 Extra name | Purpose
