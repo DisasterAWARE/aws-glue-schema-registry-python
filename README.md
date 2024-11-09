@@ -24,9 +24,13 @@ Migration from a third party Schema Registry | ✔️ | ✔️
 Flink support | ✔️ | ❌
 Kafka Connect support | ✔️ | | N/A for Python, Kafka Connect is Java-only
 
-## Installation
+## Installation - PyPI (Recommended)
 
-Clone this repository and install it:
+`pip install aws-glue-schema-registry`
+
+## Installation - local
+
+Clone this repository and run:
 
 ```
 python setup.py install -e .
@@ -67,7 +71,7 @@ from aws_schema_registry.avro import AvroSchema
 # so we need to have the `kafka-python` extras installed and use
 # the kafka adapter.
 from aws_schema_registry.adapter.kafka import KafkaSerializer
-from kafka import KafkaConsumer
+from kafka import KafkaProducer
 
 # Create the schema registry client, which is a façade around the boto3 glue client
 client = SchemaRegistryClient(glue_client,
